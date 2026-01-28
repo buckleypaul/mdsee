@@ -14,6 +14,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Make app appear in Dock and Command+Tab switcher
+        NSApp.setActivationPolicy(.regular)
+
         setupWindow()
         setupWebView()
         loadMarkdown()
@@ -41,7 +44,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             defer: false
         )
 
-        window.title = fileURL.lastPathComponent
+        window.title = "mdsee - \(fileURL.lastPathComponent)"
         window.center()
         window.setFrameAutosaveName("MarkdownViewer")
         window.minSize = NSSize(width: 400, height: 300)
