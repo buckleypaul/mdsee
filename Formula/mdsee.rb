@@ -9,8 +9,9 @@ class Mdsee < Formula
 
   def install
     system "swift", "build", "-c", "release", "--disable-sandbox"
-    bin.install ".build/release/mdsee"
-    bin.install ".build/release/mdsee_mdsee.bundle"
+    libexec.install ".build/release/mdsee"
+    libexec.install ".build/release/mdsee_mdsee.bundle"
+    bin.write_exec_script libexec/"mdsee"
   end
 
   test do
