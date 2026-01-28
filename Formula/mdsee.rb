@@ -1,8 +1,8 @@
 class Mdsee < Formula
   desc "Simple markdown file viewer for macOS with live reload"
-  homepage "https://github.com/USERNAME/mdsee"
-  url "https://github.com/USERNAME/mdsee/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "SHA256_HASH"
+  homepage "https://github.com/buckleypaul/mdsee"
+  url "https://github.com/buckleypaul/mdsee/archive/refs/tags/v1.0.0.tar.gz"
+  sha256 "REPLACE_WITH_SHA256_FROM_STEP_2"
   license "MIT"
 
   depends_on :macos
