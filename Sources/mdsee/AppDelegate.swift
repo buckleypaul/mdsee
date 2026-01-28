@@ -17,6 +17,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Make app appear in Dock and Command+Tab switcher
         NSApp.setActivationPolicy(.regular)
 
+        // Set custom app icon
+        NSApp.applicationIconImage = createAppIcon()
+
         setupWindow()
         setupWebView()
         loadMarkdown()
@@ -86,6 +89,81 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.async { [weak self] in
             self?.loadMarkdown()
         }
+    }
+
+    private func createAppIcon() -> NSImage {
+        let size = NSSize(width: 512, height: 512)
+        let image = NSImage(size: size)
+
+        image.lockFocus()
+
+        let bounds = NSRect(origin: .zero, size: size)
+        let cornerRadius: CGFloat = 90
+
+        // Background gradient (deep blue to purple)
+        let backgroundPath = NSBezierPath(roundedRect: bounds.insetBy(dx: 20, dy: 20), xRadius: cornerRadius, yRadius: cornerRadius)
+
+        let gradient = NSGradient(colors: [
+            NSColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1.0),
+            NSColor(red: 0.5, green: 0.3, blue: 0.7, alpha: 1.0)
+        ])
+        gradient?.draw(in: backgroundPath, angle: -45)
+
+        // Document shape (white, slightly smaller)
+        let docRect = bounds.insetBy(dx: 80, dy: 60)
+        let docPath = NSBezierPath(roundedRect: docRect, xRadius: 20, yRadius: 20)
+        NSColor.white.withAlphaComponent(0.95).setFill()
+        docPath.fill()
+
+        // Page fold triangle in top-right
+        let foldSize: CGFloat = 60
+        let foldPath = NSBezierPath()
+        foldPath.move(to: NSPoint(x: docRect.maxX - foldSize, y: docRect.maxY))
+        foldPath.line(to: NSPoint(x: docRect.maxX, y: docRect.maxY))
+        foldPath.line(to: NSPoint(x: docRect.maxX, y: docRect.maxY - foldSize))
+        foldPath.close()
+        NSColor(white: 0.85, alpha: 1.0).setFill()
+        foldPath.fill()
+
+        // "MD" text
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+
+        let textAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 160, weight: .bold),
+            .foregroundColor: NSColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1.0),
+            .paragraphStyle: paragraphStyle
+        ]
+
+        let text = "MD"
+        let textSize = text.size(withAttributes: textAttributes)
+        let textRect = NSRect(
+            x: (size.width - textSize.width) / 2,
+            y: (size.height - textSize.height) / 2 - 10,
+            width: textSize.width,
+            height: textSize.height
+        )
+        text.draw(in: textRect, withAttributes: textAttributes)
+
+        // Down arrow (markdown symbol) below text
+        let arrowPath = NSBezierPath()
+        let arrowCenterX = size.width / 2
+        let arrowTop: CGFloat = 130
+        let arrowWidth: CGFloat = 50
+        let arrowHeight: CGFloat = 40
+
+        arrowPath.move(to: NSPoint(x: arrowCenterX - arrowWidth, y: arrowTop))
+        arrowPath.line(to: NSPoint(x: arrowCenterX, y: arrowTop - arrowHeight))
+        arrowPath.line(to: NSPoint(x: arrowCenterX + arrowWidth, y: arrowTop))
+        arrowPath.lineWidth = 12
+        arrowPath.lineCapStyle = .round
+        arrowPath.lineJoinStyle = .round
+        NSColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1.0).setStroke()
+        arrowPath.stroke()
+
+        image.unlockFocus()
+
+        return image
     }
 
     deinit {
