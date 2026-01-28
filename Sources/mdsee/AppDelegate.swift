@@ -7,6 +7,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var fileWatcher: FileWatcher?
     private let fileURL: URL
     private let renderer: MarkdownRenderer
+    private var findBar: NSView?
+    private var findTextField: NSTextField?
+    private var findResultsLabel: NSTextField?
+    private var currentFindResults: Int = 0
+    private var currentFindIndex: Int = 0
 
     init(fileURL: URL, themeName: String? = nil) {
         self.fileURL = fileURL
@@ -21,6 +26,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Set custom app icon
         NSApp.applicationIconImage = createAppIcon()
 
+        setupMenu()
         setupWindow()
         setupWebView()
         loadMarkdown()
@@ -37,6 +43,339 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
+    }
+
+    private func setupMenu() {
+        let mainMenu = NSMenu()
+
+        // App menu
+        let appMenuItem = NSMenuItem()
+        let appMenu = NSMenu()
+        appMenu.addItem(withTitle: "About mdsee", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(NSMenuItem.separator())
+        appMenu.addItem(withTitle: "Quit mdsee", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenuItem.submenu = appMenu
+        mainMenu.addItem(appMenuItem)
+
+        // Edit menu
+        let editMenuItem = NSMenuItem()
+        let editMenu = NSMenu(title: "Edit")
+        editMenu.addItem(withTitle: "Find...", action: #selector(showFindBar), keyEquivalent: "f")
+        editMenu.addItem(withTitle: "Find Next", action: #selector(findNext), keyEquivalent: "g")
+        editMenu.addItem(withTitle: "Find Previous", action: #selector(findPrevious), keyEquivalent: "G")
+        editMenu.addItem(withTitle: "Use Selection for Find", action: #selector(useSelectionForFind), keyEquivalent: "e")
+        editMenuItem.submenu = editMenu
+        mainMenu.addItem(editMenuItem)
+
+        // View menu
+        let viewMenuItem = NSMenuItem()
+        let viewMenu = NSMenu(title: "View")
+        viewMenu.addItem(withTitle: "Reload", action: #selector(reloadMarkdown), keyEquivalent: "r")
+        viewMenuItem.submenu = viewMenu
+        mainMenu.addItem(viewMenuItem)
+
+        // Window menu
+        let windowMenuItem = NSMenuItem()
+        let windowMenu = NSMenu(title: "Window")
+        windowMenu.addItem(withTitle: "Minimize", action: #selector(NSWindow.miniaturize(_:)), keyEquivalent: "m")
+        windowMenu.addItem(withTitle: "Zoom", action: #selector(NSWindow.zoom(_:)), keyEquivalent: "")
+        windowMenu.addItem(NSMenuItem.separator())
+        windowMenu.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        windowMenuItem.submenu = windowMenu
+        mainMenu.addItem(windowMenuItem)
+
+        NSApp.mainMenu = mainMenu
+    }
+
+    @objc private func reloadMarkdown() {
+        loadMarkdown()
+    }
+
+    @objc private func showFindBar() {
+        if findBar == nil {
+            createFindBar()
+        }
+        findBar?.isHidden = false
+        window.makeFirstResponder(findTextField)
+        findTextField?.selectText(nil)
+    }
+
+    @objc private func hideFindBar() {
+        findBar?.isHidden = true
+        clearHighlights()
+        window.makeFirstResponder(webView)
+    }
+
+    private func createFindBar() {
+        let barHeight: CGFloat = 32
+        let contentView = window.contentView!
+
+        // Container view
+        let bar = NSView(frame: NSRect(x: 0, y: contentView.bounds.height - barHeight, width: contentView.bounds.width, height: barHeight))
+        bar.autoresizingMask = [.width, .minYMargin]
+        bar.wantsLayer = true
+        bar.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+
+        // Close button
+        let closeButton = NSButton(frame: NSRect(x: 4, y: 4, width: 24, height: 24))
+        closeButton.bezelStyle = .inline
+        closeButton.isBordered = false
+        closeButton.image = NSImage(systemSymbolName: "xmark", accessibilityDescription: "Close")
+        closeButton.target = self
+        closeButton.action = #selector(hideFindBar)
+        bar.addSubview(closeButton)
+
+        // Search field
+        let textField = NSTextField(frame: NSRect(x: 32, y: 4, width: 200, height: 24))
+        textField.placeholderString = "Search..."
+        textField.bezelStyle = .roundedBezel
+        textField.target = self
+        textField.action = #selector(findTextChanged(_:))
+        textField.delegate = self
+        bar.addSubview(textField)
+        findTextField = textField
+
+        // Results label
+        let resultsLabel = NSTextField(labelWithString: "")
+        resultsLabel.frame = NSRect(x: 238, y: 6, width: 80, height: 20)
+        resultsLabel.font = NSFont.systemFont(ofSize: 11)
+        resultsLabel.textColor = .secondaryLabelColor
+        bar.addSubview(resultsLabel)
+        findResultsLabel = resultsLabel
+
+        // Previous button
+        let prevButton = NSButton(frame: NSRect(x: 318, y: 4, width: 28, height: 24))
+        prevButton.bezelStyle = .inline
+        prevButton.isBordered = false
+        prevButton.image = NSImage(systemSymbolName: "chevron.up", accessibilityDescription: "Previous")
+        prevButton.target = self
+        prevButton.action = #selector(findPrevious)
+        bar.addSubview(prevButton)
+
+        // Next button
+        let nextButton = NSButton(frame: NSRect(x: 346, y: 4, width: 28, height: 24))
+        nextButton.bezelStyle = .inline
+        nextButton.isBordered = false
+        nextButton.image = NSImage(systemSymbolName: "chevron.down", accessibilityDescription: "Next")
+        nextButton.target = self
+        nextButton.action = #selector(findNext)
+        bar.addSubview(nextButton)
+
+        // Separator line at bottom
+        let separator = NSBox(frame: NSRect(x: 0, y: 0, width: bar.bounds.width, height: 1))
+        separator.boxType = .separator
+        separator.autoresizingMask = [.width]
+        bar.addSubview(separator)
+
+        contentView.addSubview(bar)
+        findBar = bar
+
+        // Adjust webView frame
+        webView.frame = NSRect(x: 0, y: 0, width: contentView.bounds.width, height: contentView.bounds.height - barHeight)
+        webView.autoresizingMask = [.width, .height]
+    }
+
+    @objc private func findTextChanged(_ sender: NSTextField) {
+        let searchText = sender.stringValue
+        if searchText.isEmpty {
+            clearHighlights()
+            findResultsLabel?.stringValue = ""
+            currentFindResults = 0
+            currentFindIndex = 0
+        } else {
+            performFind(searchText)
+        }
+    }
+
+    private func performFind(_ text: String) {
+        // Escape special characters for JavaScript string and regex
+        var escapedText = ""
+        for char in text {
+            switch char {
+            case "\\": escapedText += "\\\\"
+            case "'": escapedText += "\\'"
+            case "\"": escapedText += "\\\""
+            case "\n": escapedText += "\\n"
+            case "\r": escapedText += "\\r"
+            case "\t": escapedText += "\\t"
+            // Regex special characters
+            case "[", "]", "(", ")", "{", "}", ".", "*", "+", "?", "^", "$", "|":
+                escapedText += "\\\\\(char)"
+            default:
+                escapedText += String(char)
+            }
+        }
+
+        let js = """
+        (function() {
+            // Remove existing highlights by replacing with original text
+            var highlights = document.querySelectorAll('.mdsee-highlight');
+            highlights.forEach(function(el) {
+                var text = document.createTextNode(el.textContent);
+                el.parentNode.replaceChild(text, el);
+            });
+            // Normalize text nodes
+            document.body.normalize();
+
+            var searchText = '\(escapedText)';
+            if (!searchText) return JSON.stringify({count: 0, current: 0});
+
+            var count = 0;
+            var regex = new RegExp(searchText, 'gi');
+
+            function highlightTextNodes(element) {
+                var childNodes = Array.from(element.childNodes);
+                for (var i = 0; i < childNodes.length; i++) {
+                    var node = childNodes[i];
+                    if (node.nodeType === 3) { // Text node
+                        var text = node.textContent;
+                        var match = regex.exec(text);
+                        if (match) {
+                            regex.lastIndex = 0; // Reset regex
+                            var parts = text.split(regex);
+                            var matches = text.match(regex);
+                            if (matches && parts.length > 1) {
+                                var fragment = document.createDocumentFragment();
+                                for (var j = 0; j < parts.length; j++) {
+                                    if (parts[j]) {
+                                        fragment.appendChild(document.createTextNode(parts[j]));
+                                    }
+                                    if (j < matches.length) {
+                                        var span = document.createElement('span');
+                                        span.className = 'mdsee-highlight';
+                                        span.style.backgroundColor = '#ffff00';
+                                        span.style.color = '#000000';
+                                        span.style.borderRadius = '2px';
+                                        span.textContent = matches[j];
+                                        fragment.appendChild(span);
+                                        count++;
+                                    }
+                                }
+                                node.parentNode.replaceChild(fragment, node);
+                            }
+                        }
+                    } else if (node.nodeType === 1 && node.nodeName !== 'SCRIPT' && node.nodeName !== 'STYLE') {
+                        highlightTextNodes(node);
+                    }
+                }
+            }
+
+            highlightTextNodes(document.body);
+
+            // Mark first match as current
+            var allHighlights = document.querySelectorAll('.mdsee-highlight');
+            if (allHighlights.length > 0) {
+                allHighlights[0].style.backgroundColor = '#ff9500';
+                allHighlights[0].classList.add('mdsee-current');
+                allHighlights[0].scrollIntoView({behavior: 'smooth', block: 'center'});
+            }
+
+            return JSON.stringify({count: allHighlights.length, current: allHighlights.length > 0 ? 1 : 0});
+        })();
+        """
+
+        webView.evaluateJavaScript(js) { [weak self] result, error in
+            if let error = error {
+                print("Find error: \(error)")
+                return
+            }
+            if let jsonString = result as? String,
+               let data = jsonString.data(using: .utf8),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Int] {
+                self?.currentFindResults = json["count"] ?? 0
+                self?.currentFindIndex = json["current"] ?? 0
+                self?.updateFindResultsLabel()
+            }
+        }
+    }
+
+    @objc private func findNext() {
+        guard currentFindResults > 0 else { return }
+        navigateFind(forward: true)
+    }
+
+    @objc private func findPrevious() {
+        guard currentFindResults > 0 else { return }
+        navigateFind(forward: false)
+    }
+
+    private func navigateFind(forward: Bool) {
+        let js = """
+        (function() {
+            var highlights = document.querySelectorAll('.mdsee-highlight');
+            if (highlights.length === 0) return JSON.stringify({count: 0, current: 0});
+
+            var currentIndex = -1;
+            for (var i = 0; i < highlights.length; i++) {
+                if (highlights[i].classList.contains('mdsee-current')) {
+                    currentIndex = i;
+                    highlights[i].style.backgroundColor = '#ffff00';
+                    highlights[i].classList.remove('mdsee-current');
+                    break;
+                }
+            }
+
+            var newIndex;
+            if (\(forward)) {
+                newIndex = (currentIndex + 1) >= highlights.length ? 0 : currentIndex + 1;
+            } else {
+                newIndex = (currentIndex - 1) < 0 ? highlights.length - 1 : currentIndex - 1;
+            }
+
+            highlights[newIndex].style.backgroundColor = '#ff9500';
+            highlights[newIndex].classList.add('mdsee-current');
+            highlights[newIndex].scrollIntoView({behavior: 'smooth', block: 'center'});
+
+            return JSON.stringify({count: highlights.length, current: newIndex + 1});
+        })();
+        """
+
+        webView.evaluateJavaScript(js) { [weak self] result, error in
+            if let error = error {
+                print("Navigate error: \(error)")
+                return
+            }
+            if let jsonString = result as? String,
+               let data = jsonString.data(using: .utf8),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Int] {
+                self?.currentFindResults = json["count"] ?? 0
+                self?.currentFindIndex = json["current"] ?? 0
+                self?.updateFindResultsLabel()
+            }
+        }
+    }
+
+    @objc private func useSelectionForFind() {
+        let js = "window.getSelection().toString();"
+        webView.evaluateJavaScript(js) { [weak self] result, error in
+            if let selectedText = result as? String, !selectedText.isEmpty {
+                self?.showFindBar()
+                self?.findTextField?.stringValue = selectedText
+                self?.performFind(selectedText)
+            }
+        }
+    }
+
+    private func clearHighlights() {
+        let js = """
+        (function() {
+            var highlights = document.querySelectorAll('.mdsee-highlight');
+            highlights.forEach(function(el) {
+                var text = document.createTextNode(el.textContent);
+                el.parentNode.replaceChild(text, el);
+            });
+            document.body.normalize();
+        })();
+        """
+        webView.evaluateJavaScript(js, completionHandler: nil)
+    }
+
+    private func updateFindResultsLabel() {
+        if currentFindResults == 0 {
+            findResultsLabel?.stringValue = "No results"
+        } else {
+            findResultsLabel?.stringValue = "\(currentFindIndex) of \(currentFindResults)"
+        }
     }
 
     private func setupWindow() {
@@ -170,5 +509,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     deinit {
         fileWatcher?.stop()
         DistributedNotificationCenter.default.removeObserver(self)
+    }
+}
+
+extension AppDelegate: NSTextFieldDelegate {
+    func controlTextDidChange(_ obj: Notification) {
+        guard let textField = obj.object as? NSTextField else { return }
+        let searchText = textField.stringValue
+        if searchText.isEmpty {
+            clearHighlights()
+            findResultsLabel?.stringValue = ""
+            currentFindResults = 0
+            currentFindIndex = 0
+        } else {
+            performFind(searchText)
+        }
+    }
+
+    func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+            // Escape key - close find bar
+            hideFindBar()
+            return true
+        } else if commandSelector == #selector(NSResponder.insertNewline(_:)) {
+            // Enter key - find next
+            findNext()
+            return true
+        }
+        return false
     }
 }
