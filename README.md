@@ -7,14 +7,13 @@ A minimal macOS CLI tool that opens a native window to view markdown files with 
 ### Via Homebrew (recommended)
 
 ```bash
-brew tap USERNAME/mdsee
-brew install mdsee
+brew install buckleypaul/mdsee/mdsee
 ```
 
 ### From source
 
 ```bash
-git clone https://github.com/USERNAME/mdsee.git
+git clone https://github.com/buckleypaul/mdsee.git
 cd mdsee
 swift build -c release
 cp .build/release/mdsee /usr/local/bin/
