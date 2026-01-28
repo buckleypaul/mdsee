@@ -1,0 +1,20 @@
+name: catppuccin-frappe
+mode: dark
+
+colors:
+  background: "#303446"
+  text: "#c6d0f5"
+  headings: "#c6d0f5"
+  links: "#8caaee"
+  code-background: "#292c3c"
+  border: "#51576d"
+  blockquote-border: "#626880"
+  blockquote-text: "#a5adce"
+  table-border: "#51576d"
+  table-row-alt: "#292c3c"
+  hr: "#626880"
+  error-background: "#414559"
+  error-border: "#e78284"
+  error-text: "#e78284"
+
+highlightjs: github-dark

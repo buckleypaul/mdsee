@@ -1,0 +1,20 @@
+name: catppuccin-latte
+mode: light
+
+colors:
+  background: "#eff1f5"
+  text: "#4c4f69"
+  headings: "#4c4f69"
+  links: "#1e66f5"
+  code-background: "#e6e9ef"
+  border: "#bcc0cc"
+  blockquote-border: "#acb0be"
+  blockquote-text: "#6c6f85"
+  table-border: "#bcc0cc"
+  table-row-alt: "#e6e9ef"
+  hr: "#acb0be"
+  error-background: "#eff1f5"
+  error-border: "#d20f39"
+  error-text: "#d20f39"
+
+highlightjs: github

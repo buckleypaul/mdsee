@@ -1,0 +1,20 @@
+name: catppuccin-macchiato
+mode: dark
+
+colors:
+  background: "#24273a"
+  text: "#cad3f5"
+  headings: "#cad3f5"
+  links: "#8aadf4"
+  code-background: "#1e2030"
+  border: "#494d64"
+  blockquote-border: "#5b6078"
+  blockquote-text: "#a5adcb"
+  table-border: "#494d64"
+  table-row-alt: "#1e2030"
+  hr: "#5b6078"
+  error-background: "#363a4f"
+  error-border: "#ed8796"
+  error-text: "#ed8796"
+
+highlightjs: github-dark

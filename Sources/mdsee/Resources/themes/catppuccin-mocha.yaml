@@ -1,0 +1,20 @@
+name: catppuccin-mocha
+mode: dark
+
+colors:
+  background: "#1e1e2e"
+  text: "#cdd6f4"
+  headings: "#cdd6f4"
+  links: "#89b4fa"
+  code-background: "#181825"
+  border: "#45475a"
+  blockquote-border: "#585b70"
+  blockquote-text: "#a6adc8"
+  table-border: "#45475a"
+  table-row-alt: "#181825"
+  hr: "#585b70"
+  error-background: "#313244"
+  error-border: "#f38ba8"
+  error-text: "#f38ba8"
+
+highlightjs: github-dark
