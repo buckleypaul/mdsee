@@ -3,8 +3,18 @@ import Markdown
 
 class MarkdownRenderer {
     private let templateHTML: String
+    private let themeEngine: ThemeEngine
+    private var currentTheme: ResolvedTheme
 
-    init() {
+    init(themeName: String? = nil) {
+        self.themeEngine = ThemeEngine()
+
+        if let name = themeName, let theme = themeEngine.getTheme(named: name) {
+            self.currentTheme = theme
+        } else {
+            self.currentTheme = themeEngine.getDefaultTheme()
+        }
+
         if let templateURL = Bundle.module.url(forResource: "template", withExtension: "html"),
            let template = try? String(contentsOf: templateURL, encoding: .utf8) {
             self.templateHTML = template
@@ -13,10 +23,21 @@ class MarkdownRenderer {
             self.templateHTML = """
             <!DOCTYPE html>
             <html>
-            <head><meta charset="utf-8"><title>Markdown</title></head>
+            <head>
+            <meta charset="utf-8">
+            <title>Markdown</title>
+            <style>{{THEME_CSS}}</style>
+            {{HIGHLIGHT_JS_LINKS}}
+            </head>
             <body>{{CONTENT}}</body>
             </html>
             """
+        }
+    }
+
+    func setTheme(named name: String) {
+        if let theme = themeEngine.getTheme(named: name) {
+            currentTheme = theme
         }
     }
 
@@ -24,12 +45,23 @@ class MarkdownRenderer {
         let document = Document(parsing: markdown)
         var htmlVisitor = HTMLVisitor()
         let htmlContent = htmlVisitor.visit(document)
-        return templateHTML.replacingOccurrences(of: "{{CONTENT}}", with: htmlContent)
+        return applyTheme(to: templateHTML)
+            .replacingOccurrences(of: "{{CONTENT}}", with: htmlContent)
     }
 
     func renderError(_ message: String) -> String {
         let errorHTML = "<div class=\"error\">\(escapeHTML(message))</div>"
-        return templateHTML.replacingOccurrences(of: "{{CONTENT}}", with: errorHTML)
+        return applyTheme(to: templateHTML)
+            .replacingOccurrences(of: "{{CONTENT}}", with: errorHTML)
+    }
+
+    private func applyTheme(to template: String) -> String {
+        let themeCSS = themeEngine.generateCSS(for: currentTheme)
+        let highlightJSLinks = themeEngine.generateHighlightJSLinks(for: currentTheme)
+
+        return template
+            .replacingOccurrences(of: "{{THEME_CSS}}", with: themeCSS)
+            .replacingOccurrences(of: "{{HIGHLIGHT_JS_LINKS}}", with: highlightJSLinks)
     }
 
     private func escapeHTML(_ string: String) -> String {

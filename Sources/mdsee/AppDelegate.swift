@@ -6,10 +6,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var webView: WKWebView!
     private var fileWatcher: FileWatcher?
     private let fileURL: URL
-    private let renderer = MarkdownRenderer()
+    private let renderer: MarkdownRenderer
 
-    init(fileURL: URL) {
+    init(fileURL: URL, themeName: String? = nil) {
         self.fileURL = fileURL
+        self.renderer = MarkdownRenderer(themeName: themeName)
         super.init()
     }
 

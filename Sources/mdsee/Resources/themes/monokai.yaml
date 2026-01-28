@@ -1,0 +1,20 @@
+name: monokai
+mode: dark
+
+colors:
+  background: "#272822"
+  text: "#f8f8f2"
+  headings: "#f8f8f2"
+  links: "#66d9ef"
+  code-background: "#3e3d32"
+  border: "#49483e"
+  blockquote-border: "#75715e"
+  blockquote-text: "#75715e"
+  table-border: "#49483e"
+  table-row-alt: "#3e3d32"
+  hr: "#49483e"
+  error-background: "#3e3d32"
+  error-border: "#f92672"
+  error-text: "#f92672"
+
+highlightjs: monokai

@@ -2,7 +2,8 @@ import AppKit
 import Foundation
 
 func printUsage() {
-    fputs("Usage: mdsee <file.md>\n", stderr)
+    fputs("Usage: mdsee [--theme <name>] <file.md>\n", stderr)
+    fputs("       mdsee --list-themes\n", stderr)
 }
 
 func printError(_ message: String) {
@@ -13,25 +14,67 @@ func printError(_ message: String) {
 let isDetached = ProcessInfo.processInfo.environment["MDSEE_DETACHED"] == "1"
 
 // Parse command line arguments
-let args = CommandLine.arguments
-guard args.count == 2 else {
+var args = Array(CommandLine.arguments.dropFirst())
+var themeName: String?
+var filePath: String?
+
+// Handle --list-themes
+if args.contains("--list-themes") {
+    let engine = ThemeEngine()
+    let themes = engine.listThemes()
+    if themes.isEmpty {
+        print("No themes found.")
+    } else {
+        print("Available themes:")
+        for theme in themes {
+            print("  - \(theme)")
+        }
+    }
+    exit(0)
+}
+
+// Parse arguments
+while !args.isEmpty {
+    let arg = args.removeFirst()
+    if arg == "--theme" || arg == "-t" {
+        guard !args.isEmpty else {
+            printError("--theme requires a theme name")
+            printUsage()
+            exit(1)
+        }
+        themeName = args.removeFirst()
+    } else if arg.starts(with: "-") {
+        printError("Unknown option: \(arg)")
+        printUsage()
+        exit(1)
+    } else {
+        filePath = arg
+    }
+}
+
+guard let path = filePath else {
     printUsage()
     exit(1)
 }
 
-let filePath = args[1]
-let fileURL = URL(fileURLWithPath: filePath).standardizedFileURL
+// Load config and apply defaults
+let config = AppConfig.load()
+if themeName == nil {
+    themeName = config.theme
+}
+
+let fileURL = URL(fileURLWithPath: path).standardizedFileURL
 
 // Validate file exists
 let fileManager = FileManager.default
 guard fileManager.fileExists(atPath: fileURL.path) else {
-    printError("File does not exist: \(filePath)")
+    printError("File does not exist: \(path)")
     exit(1)
 }
 
 // Validate file is readable
 guard fileManager.isReadableFile(atPath: fileURL.path) else {
-    printError("File is not readable: \(filePath)")
+    printError("File is not readable: \(path)")
     exit(1)
 }
 
@@ -42,10 +85,13 @@ if !isDetached {
     // Build environment with MDSEE_DETACHED=1
     var env = ProcessInfo.processInfo.environment
     env["MDSEE_DETACHED"] = "1"
+    if let theme = themeName {
+        env["MDSEE_THEME"] = theme
+    }
     let envStrings = env.map { "\($0.key)=\($0.value)" }
     let envCStrings = envStrings.map { strdup($0) } + [nil]
 
-    // Build arguments
+    // Build arguments (theme is passed via environment to avoid complex arg parsing)
     let argsCStrings = [strdup(executablePath), strdup(fileURL.path), nil]
 
     var pid: pid_t = 0
@@ -80,7 +126,10 @@ if !isDetached {
 }
 
 // Detached child process: start the application
+// Theme can come from environment (passed by parent) or config
+let effectiveTheme = ProcessInfo.processInfo.environment["MDSEE_THEME"] ?? themeName
+
 let app = NSApplication.shared
-let delegate = AppDelegate(fileURL: fileURL)
+let delegate = AppDelegate(fileURL: fileURL, themeName: effectiveTheme)
 app.delegate = delegate
 app.run()

@@ -1,0 +1,37 @@
+name: solarized
+
+light:
+  colors:
+    background: "#fdf6e3"
+    text: "#657b83"
+    headings: "#073642"
+    links: "#268bd2"
+    code-background: "#eee8d5"
+    border: "#93a1a1"
+    blockquote-border: "#93a1a1"
+    blockquote-text: "#93a1a1"
+    table-border: "#93a1a1"
+    table-row-alt: "#eee8d5"
+    hr: "#93a1a1"
+    error-background: "#fdf6e3"
+    error-border: "#dc322f"
+    error-text: "#dc322f"
+  highlightjs: solarized-light
+
+dark:
+  colors:
+    background: "#002b36"
+    text: "#839496"
+    headings: "#93a1a1"
+    links: "#268bd2"
+    code-background: "#073642"
+    border: "#586e75"
+    blockquote-border: "#586e75"
+    blockquote-text: "#586e75"
+    table-border: "#586e75"
+    table-row-alt: "#073642"
+    hr: "#586e75"
+    error-background: "#073642"
+    error-border: "#dc322f"
+    error-text: "#dc322f"
+  highlightjs: solarized-dark
