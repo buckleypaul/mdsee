@@ -121,12 +121,28 @@ The `headings` color property can be either a string (all headings same color) o
 
 **WebView Base URL**: `loadHTMLString(_:baseURL:)` uses the markdown file's directory as base URL so relative image paths work correctly.
 
-## Homebrew Distribution
+## Release Process
 
-The Formula/mdsee.rb file is used for Homebrew distribution. When updating the version:
-1. Update the formula's URL and SHA256
-2. The formula builds from source using `swift build -c release`
-3. Binary is installed to Homebrew's bin directory
+When creating a new release, follow these steps:
+
+1. **Update CHANGELOG.md**:
+   - Move unreleased changes to a new version section with the release date
+   - Follow [Keep a Changelog](https://keepachangelog.com/) format
+   - Categorize changes as Added, Changed, Fixed, Removed, etc.
+   - Add comparison link at the bottom
+
+2. **Create Git Tag**:
+   - Tag the release: `git tag v1.x.x`
+   - Push tag: `git push origin v1.x.x`
+
+3. **Update Homebrew Formula**:
+   - Update Formula/mdsee.rb with new version URL and SHA256
+   - The formula builds from source using `swift build -c release`
+   - Binary is installed to Homebrew's bin directory
+
+4. **Create GitHub Release**:
+   - Create release from tag on GitHub
+   - Copy relevant section from CHANGELOG.md as release notes
 
 ## Debugging Tips
 
