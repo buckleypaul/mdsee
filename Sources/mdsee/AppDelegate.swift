@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 import WebKit
 
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -60,8 +61,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // File menu
         let fileMenuItem = NSMenuItem()
         let fileMenu = NSMenu(title: "File")
-        let printMenuItem = fileMenu.addItem(withTitle: "Print...", action: #selector(printDocument), keyEquivalent: "p")
-        printMenuItem.target = self
+        let exportPDFMenuItem = fileMenu.addItem(withTitle: "Export as PDF...", action: #selector(exportPDF), keyEquivalent: "p")
+        exportPDFMenuItem.target = self
         fileMenuItem.submenu = fileMenu
         mainMenu.addItem(fileMenuItem)
 
@@ -102,20 +103,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         loadMarkdown()
     }
 
-    @objc private func printDocument() {
-        let printInfo = NSPrintInfo.shared
-        printInfo.horizontalPagination = .fit
-        printInfo.verticalPagination = .automatic
-        printInfo.isHorizontallyCentered = true
-        printInfo.topMargin = 40
-        printInfo.bottomMargin = 40
-        printInfo.leftMargin = 40
-        printInfo.rightMargin = 40
+    @objc private func exportPDF() {
+        let savePanel = NSSavePanel()
+        savePanel.allowedContentTypes = [UTType.pdf]
+        savePanel.nameFieldStringValue = fileURL.deletingPathExtension().lastPathComponent + ".pdf"
 
-        let printOperation = NSPrintOperation(view: webView, printInfo: printInfo)
-        printOperation.showsPrintPanel = true
-        printOperation.showsProgressPanel = true
-        printOperation.run()
+        savePanel.beginSheetModal(for: window) { [weak self] response in
+            guard response == .OK, let url = savePanel.url else { return }
+            self?.webView.createPDF(configuration: .init()) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let data):
+                        do {
+                            try data.write(to: url)
+                        } catch {
+                            let alert = NSAlert()
+                            alert.messageText = "Failed to save PDF"
+                            alert.informativeText = error.localizedDescription
+                            alert.runModal()
+                        }
+                    case .failure(let error):
+                        let alert = NSAlert()
+                        alert.messageText = "Failed to generate PDF"
+                        alert.informativeText = error.localizedDescription
+                        alert.runModal()
+                    }
+                }
+            }
+        }
     }
 
     @objc private func copyText() {
