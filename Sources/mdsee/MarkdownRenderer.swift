@@ -76,6 +76,7 @@ class MarkdownRenderer {
 
 struct HTMLVisitor: MarkupVisitor {
     typealias Result = String
+    private var seenIDs: [String: Int] = [:]
 
     mutating func defaultVisit(_ markup: Markup) -> String {
         markup.children.map { visit($0) }.joined()
@@ -114,7 +115,37 @@ struct HTMLVisitor: MarkupVisitor {
     mutating func visitHeading(_ heading: Heading) -> String {
         let level = min(max(heading.level, 1), 6)
         let content = heading.children.map { visit($0) }.joined()
-        return "<h\(level)>\(content)</h\(level)>\n"
+        let slug = generateSlug(from: heading)
+        return "<h\(level) id=\"\(slug)\">\(content)</h\(level)>\n"
+    }
+
+    private mutating func generateSlug(from heading: Heading) -> String {
+        let plainText = heading.children.compactMap { extractText($0) }.joined()
+        var slug = plainText
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "-")
+        slug = slug.unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) || $0 == "-" }
+            .map { String($0) }.joined()
+        // Collapse multiple hyphens
+        while slug.contains("--") {
+            slug = slug.replacingOccurrences(of: "--", with: "-")
+        }
+        slug = slug.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        if slug.isEmpty { slug = "heading" }
+
+        let count = seenIDs[slug, default: 0]
+        seenIDs[slug] = count + 1
+        if count > 0 {
+            slug += "-\(count)"
+        }
+        return slug
+    }
+
+    private func extractText(_ markup: Markup) -> String {
+        if let text = markup as? Text {
+            return text.string
+        }
+        return markup.children.compactMap { extractText($0) }.joined()
     }
 
     mutating func visitLink(_ link: Link) -> String {

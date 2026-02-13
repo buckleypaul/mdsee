@@ -193,16 +193,142 @@
         del {
             text-decoration: line-through;
         }
+
+        /* Table of Contents sidebar */
+        #mdsee-toc {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 250px;
+            height: 100vh;
+            overflow-y: auto;
+            background-color: var(--bg-color);
+            border-right: 1px solid var(--border-color);
+            padding: 16px 0;
+            z-index: 100;
+        }
+
+        #mdsee-toc h3 {
+            margin: 0 0 8px 0;
+            padding: 0 16px 8px;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        #mdsee-toc ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #mdsee-toc a {
+            display: block;
+            padding: 4px 16px;
+            color: var(--link-color);
+            text-decoration: none;
+            font-size: 0.85em;
+            line-height: 1.4;
+            border-left: 3px solid transparent;
+        }
+
+        #mdsee-toc a:hover {
+            background-color: var(--code-bg);
+            text-decoration: none;
+        }
+
+        #mdsee-toc a.toc-active {
+            font-weight: 600;
+            border-left-color: var(--link-color);
+            background-color: var(--code-bg);
+        }
+
+        #mdsee-toc .toc-h2 { padding-left: 28px; }
+        #mdsee-toc .toc-h3 { padding-left: 40px; }
+        #mdsee-toc .toc-h4 { padding-left: 52px; }
+        #mdsee-toc .toc-h5 { padding-left: 64px; }
+        #mdsee-toc .toc-h6 { padding-left: 76px; }
+
+        html.toc-visible #mdsee-toc {
+            display: block;
+        }
+
+        html.toc-visible body {
+            margin-left: 260px;
+            transition: margin-left 0.15s ease;
+        }
     </style>
 </head>
 <body>
+    <nav id="mdsee-toc"></nav>
     {{CONTENT}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('pre code').forEach(function(block) {
                 hljs.highlightElement(block);
             });
+            buildTOC();
         });
+
+        function buildTOC() {
+            var toc = document.getElementById('mdsee-toc');
+            if (!toc) return;
+
+            var headings = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]');
+            if (headings.length === 0) {
+                toc.innerHTML = '';
+                return;
+            }
+
+            var html = '<h3>Contents</h3><ul>';
+            headings.forEach(function(h) {
+                var level = h.tagName.toLowerCase();
+                html += '<li><a href="#' + h.id + '" class="toc-' + level + '">' + h.textContent + '</a></li>';
+            });
+            html += '</ul>';
+            toc.innerHTML = html;
+
+            // Scroll spy with IntersectionObserver
+            var tocLinks = toc.querySelectorAll('a');
+            var headingMap = {};
+            tocLinks.forEach(function(link) {
+                headingMap[link.getAttribute('href').substring(1)] = link;
+            });
+
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        tocLinks.forEach(function(l) { l.classList.remove('toc-active'); });
+                        var link = headingMap[entry.target.id];
+                        if (link) {
+                            link.classList.add('toc-active');
+                            // Scroll TOC to keep active item visible
+                            link.scrollIntoView({ block: 'nearest' });
+                        }
+                    }
+                });
+            }, { rootMargin: '0px 0px -70% 0px', threshold: 0 });
+
+            headings.forEach(function(h) { observer.observe(h); });
+
+            // Click handler for smooth scrolling
+            tocLinks.forEach(function(link) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var target = document.getElementById(this.getAttribute('href').substring(1));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+        }
+
+        function toggleTOC() {
+            document.documentElement.classList.toggle('toc-visible');
+        }
     </script>
 </body>
 </html>

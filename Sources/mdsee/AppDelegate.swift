@@ -83,6 +83,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let viewMenuItem = NSMenuItem()
         let viewMenu = NSMenu(title: "View")
         viewMenu.addItem(withTitle: "Reload", action: #selector(reloadMarkdown), keyEquivalent: "r")
+        let tocMenuItem = viewMenu.addItem(withTitle: "Table of Contents", action: #selector(toggleTOC), keyEquivalent: "t")
+        tocMenuItem.target = self
         viewMenuItem.submenu = viewMenu
         mainMenu.addItem(viewMenuItem)
 
@@ -101,6 +103,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func reloadMarkdown() {
         loadMarkdown()
+    }
+
+    @objc private func toggleTOC() {
+        webView.evaluateJavaScript("toggleTOC()", completionHandler: nil)
     }
 
     @objc private func exportPDF() {
