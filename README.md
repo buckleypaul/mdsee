@@ -23,6 +23,7 @@ cp .build/release/mdsee /usr/local/bin/
 
 ```bash
 mdsee <file.md>
+mdsee --theme <theme-name> <file.md>
 ```
 
 Simply run `mdsee` with a markdown file path. A native window will open displaying the rendered markdown.
@@ -33,6 +34,10 @@ Simply run `mdsee` with a markdown file path. A native window will open displayi
 - Automatic live reload when the file changes
 - Dark mode support (adapts to macOS appearance)
 - Tables, task lists, blockquotes, and more
+- Print and save as PDF (⌘P)
+- Find in page (⌘F)
+- Text selection and copy (⌘C)
+- Multiple built-in themes
 
 ## Examples
 
@@ -42,7 +47,36 @@ mdsee README.md
 
 # View any markdown file
 mdsee ~/Documents/notes.md
+
+# Use a specific theme
+mdsee --theme academic paper.md
+mdsee --theme solarized notes.md
 ```
+
+## Themes
+
+mdsee comes with several built-in themes:
+
+- **default** - GitHub-style theme with light/dark mode
+- **academic** - Palatino serif fonts for scholarly documents
+- **solarized** - Solarized light/dark color scheme
+- **catppuccin** - Catppuccin color palette (frappe, latte, macchiato, mocha variants)
+- **monokai** - Popular dark theme
+
+Use the `--theme` flag to select a theme:
+
+```bash
+mdsee --theme academic document.md
+```
+
+## Printing and Exporting
+
+Press **⌘P** to open the macOS print dialog. From there you can:
+- Print to a physical printer
+- Save as PDF using the "Save as PDF" button in the print dialog
+- Adjust page layout and margins
+
+This makes it easy to export your markdown documents to PDF format with full formatting preserved.
 
 ## Error Handling
 
