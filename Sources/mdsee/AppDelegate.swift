@@ -60,6 +60,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Edit menu
         let editMenuItem = NSMenuItem()
         let editMenu = NSMenu(title: "Edit")
+        editMenu.addItem(withTitle: "Copy", action: #selector(copyText), keyEquivalent: "c")
+        editMenu.addItem(withTitle: "Select All", action: #selector(selectAllText), keyEquivalent: "a")
+        editMenu.addItem(NSMenuItem.separator())
         editMenu.addItem(withTitle: "Find...", action: #selector(showFindBar), keyEquivalent: "f")
         editMenu.addItem(withTitle: "Find Next", action: #selector(findNext), keyEquivalent: "g")
         editMenu.addItem(withTitle: "Find Previous", action: #selector(findPrevious), keyEquivalent: "G")
@@ -89,6 +92,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func reloadMarkdown() {
         loadMarkdown()
+    }
+
+    @objc private func copyText() {
+        let js = "window.getSelection().toString();"
+        webView.evaluateJavaScript(js) { result, error in
+            if let selectedText = result as? String, !selectedText.isEmpty {
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.setString(selectedText, forType: .string)
+            }
+        }
+    }
+
+    @objc private func selectAllText() {
+        let js = """
+        (function() {
+            var range = document.createRange();
+            range.selectNodeContents(document.body);
+            var selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        })();
+        """
+        webView.evaluateJavaScript(js, completionHandler: nil)
     }
 
     @objc private func showFindBar() {
