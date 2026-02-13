@@ -178,7 +178,30 @@ class ThemeEngine {
         var css = ""
         css += "\(indent)--bg-color: \(colors.background ?? "#ffffff");\n"
         css += "\(indent)--text-color: \(colors.text ?? "#24292f");\n"
-        css += "\(indent)--heading-color: \(colors.headings ?? "#1f2328");\n"
+
+        // Generate heading color variables
+        let defaultHeadingColor = colors.headings ?? "#1f2328"
+        css += "\(indent)--heading-color: \(defaultHeadingColor);\n"
+
+        // Generate per-level heading colors
+        if let headingColors = colors.headingColors {
+            // Use per-level colors with fallback logic
+            css += "\(indent)--h1-color: \(headingColors.color(for: 1, fallback: defaultHeadingColor));\n"
+            css += "\(indent)--h2-color: \(headingColors.color(for: 2, fallback: defaultHeadingColor));\n"
+            css += "\(indent)--h3-color: \(headingColors.color(for: 3, fallback: defaultHeadingColor));\n"
+            css += "\(indent)--h4-color: \(headingColors.color(for: 4, fallback: defaultHeadingColor));\n"
+            css += "\(indent)--h5-color: \(headingColors.color(for: 5, fallback: defaultHeadingColor));\n"
+            css += "\(indent)--h6-color: \(headingColors.color(for: 6, fallback: defaultHeadingColor));\n"
+        } else {
+            // All levels use the single heading color
+            css += "\(indent)--h1-color: \(defaultHeadingColor);\n"
+            css += "\(indent)--h2-color: \(defaultHeadingColor);\n"
+            css += "\(indent)--h3-color: \(defaultHeadingColor);\n"
+            css += "\(indent)--h4-color: \(defaultHeadingColor);\n"
+            css += "\(indent)--h5-color: \(defaultHeadingColor);\n"
+            css += "\(indent)--h6-color: \(defaultHeadingColor);\n"
+        }
+
         css += "\(indent)--link-color: \(colors.links ?? "#0969da");\n"
         css += "\(indent)--code-bg: \(colors.codeBackground ?? "#f6f8fa");\n"
         css += "\(indent)--border-color: \(colors.border ?? "#d0d7de");\n"
