@@ -57,6 +57,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         appMenuItem.submenu = appMenu
         mainMenu.addItem(appMenuItem)
 
+        // File menu
+        let fileMenuItem = NSMenuItem()
+        let fileMenu = NSMenu(title: "File")
+        fileMenu.addItem(withTitle: "Print...", action: #selector(printDocument), keyEquivalent: "p")
+        fileMenuItem.submenu = fileMenu
+        mainMenu.addItem(fileMenuItem)
+
         // Edit menu
         let editMenuItem = NSMenuItem()
         let editMenu = NSMenu(title: "Edit")
@@ -92,6 +99,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func reloadMarkdown() {
         loadMarkdown()
+    }
+
+    @objc private func printDocument() {
+        webView.evaluateJavaScript("window.print()", completionHandler: nil)
     }
 
     @objc private func copyText() {
