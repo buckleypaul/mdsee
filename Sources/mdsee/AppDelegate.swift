@@ -60,7 +60,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // File menu
         let fileMenuItem = NSMenuItem()
         let fileMenu = NSMenu(title: "File")
-        fileMenu.addItem(withTitle: "Print...", action: #selector(printDocument), keyEquivalent: "p")
+        let printMenuItem = fileMenu.addItem(withTitle: "Print...", action: #selector(printDocument), keyEquivalent: "p")
+        printMenuItem.target = self
         fileMenuItem.submenu = fileMenu
         mainMenu.addItem(fileMenuItem)
 
@@ -102,7 +103,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func printDocument() {
-        webView.evaluateJavaScript("window.print()", completionHandler: nil)
+        let printInfo = NSPrintInfo.shared
+        printInfo.horizontalPagination = .fit
+        printInfo.verticalPagination = .automatic
+        printInfo.isHorizontallyCentered = true
+        printInfo.topMargin = 40
+        printInfo.bottomMargin = 40
+        printInfo.leftMargin = 40
+        printInfo.rightMargin = 40
+
+        let printOperation = NSPrintOperation(view: webView, printInfo: printInfo)
+        printOperation.showsPrintPanel = true
+        printOperation.showsProgressPanel = true
+        printOperation.run()
     }
 
     @objc private func copyText() {
