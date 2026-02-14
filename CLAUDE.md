@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 mdsee is a minimal macOS CLI tool that opens a native window to view markdown files with automatic refresh on file changes. It's written in Swift using Swift Package Manager and requires macOS 12.0+.
 
-**Key Features**: GitHub Flavored Markdown support, syntax highlighting, live file watching, dark mode, themeable UI, Table of Contents sidebar, find in page, and PDF export.
+**Key Features**: GitHub Flavored Markdown support, syntax highlighting, live file watching, dark mode, themeable UI, Table of Contents sidebar, find in page, zoom controls, text selection/copy, and PDF export.
 
 ## Building and Running
 
@@ -43,7 +43,7 @@ The app uses a unique detached process architecture in `main.swift`:
 
 ### Key Components
 
-**AppDelegate.swift** (614 lines)
+**AppDelegate.swift** (633 lines)
 - Main application coordinator
 - Sets up NSWindow, WKWebView, menu system
 - Implements find-in-page functionality (custom UI + JavaScript highlighting)
@@ -120,6 +120,8 @@ The `headings` color property can be either a string (all headings same color) o
 **Theme Resolution**: All theme colors have fallbacks to GitHub light/dark defaults. When adding new theme properties, update both `ThemeColors` and the `.merged(with:)` implementation, plus the CSS variable generation in ThemeEngine.
 
 **WebView Base URL**: `loadHTMLString(_:baseURL:)` uses the markdown file's directory as base URL so relative image paths work correctly.
+
+**Zoom Implementation**: Zoom in/out (Cmd+/Cmd-) uses CSS `document.body.style.zoom` via JavaScript injection. State is tracked in `currentZoomLevel` property with 10% increments, clamped to 50%-300% range. Zoom level resets to 1.0 on file reload.
 
 ## Release Process
 
