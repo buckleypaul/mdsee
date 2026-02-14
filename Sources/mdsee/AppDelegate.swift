@@ -13,6 +13,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var findResultsLabel: NSTextField?
     private var currentFindResults: Int = 0
     private var currentFindIndex: Int = 0
+    private var currentZoomLevel: Double = 1.0
 
     init(fileURL: URL, themeName: String? = nil) {
         self.fileURL = fileURL
@@ -85,6 +86,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         viewMenu.addItem(withTitle: "Reload", action: #selector(reloadMarkdown), keyEquivalent: "r")
         let tocMenuItem = viewMenu.addItem(withTitle: "Table of Contents", action: #selector(toggleTOC), keyEquivalent: "t")
         tocMenuItem.target = self
+        viewMenu.addItem(NSMenuItem.separator())
+        viewMenu.addItem(withTitle: "Zoom In", action: #selector(zoomIn), keyEquivalent: "+")
+        viewMenu.addItem(withTitle: "Zoom Out", action: #selector(zoomOut), keyEquivalent: "-")
         viewMenuItem.submenu = viewMenu
         mainMenu.addItem(viewMenuItem)
 
@@ -107,6 +111,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func toggleTOC() {
         webView.evaluateJavaScript("toggleTOC()", completionHandler: nil)
+    }
+
+    @objc private func zoomIn() {
+        currentZoomLevel = min(currentZoomLevel + 0.1, 3.0)
+        applyZoom()
+    }
+
+    @objc private func zoomOut() {
+        currentZoomLevel = max(currentZoomLevel - 0.1, 0.5)
+        applyZoom()
+    }
+
+    private func applyZoom() {
+        let js = "document.body.style.zoom = '\(currentZoomLevel)';"
+        webView.evaluateJavaScript(js, completionHandler: nil)
     }
 
     @objc private func exportPDF() {
@@ -478,6 +497,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func loadMarkdown() {
+        currentZoomLevel = 1.0
         do {
             let markdown = try String(contentsOf: fileURL, encoding: .utf8)
             let html = renderer.render(markdown: markdown)
